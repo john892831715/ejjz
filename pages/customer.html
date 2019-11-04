@@ -1,0 +1,351 @@
+<div id="customer"></div>
+<script>
+var baseURL = "http://47.94.44.23:6677";
+
+/*//模态框隐藏
+function cancel(){
+	$("#cancel").on("click",function(){
+		$("#customer_Modal").modal("hide");
+	})
+}*/
+
+// 初始化数据
+function initData(){
+	var url = "/customer/findAll"
+	$.get(baseURL+url,function(response){
+		$("#customer_tbl > tbody").empty();
+		response.data.forEach(function(item){
+			var newTr = $(`<tr>
+				<td><input type="checkbox" name = "id" value="`+item.id+`"></td>
+				<td>`+item.realname+`</td>
+				<td>`+item.status+`</td>
+				<td>`+item.telephone+`</td>
+				<td>
+					<a class="btn_del" href="javascript:void(0)">删除</a>
+					<a class="btn_upd" href="javascript:void(0)">修改</a>
+				</td>
+			</tr>`);
+			$("#customer_tbl > tbody").append(newTr);
+		});
+	});
+}
+// 为添加按钮绑定模态框事件
+function add(){
+	$(".btns #btn_add").click(function(){
+		$("#customer_Modal").modal("show");
+	})
+}
+
+// 删除/修改功能
+function del() {
+	// 为删除按钮绑定事件
+		$("#customer_tbl > tbody").on("click","a",function(){
+		switch(this.className){
+			case "btn_del":
+				$("#exampleModal").modal("show");
+				var url = baseURL+"/customer/deleteById";
+				//获取Id
+				var id = $(this).parents("tr").find("input").val();
+				$("#Yes").on("click",function(){
+					//获取id
+				var data = "id="+id;
+					$.get(url,data,function(result){
+						alert(result.message);
+						initData();
+					});
+					$("#exampleModal").modal("hide");
+				})
+				break;
+			case "btn_upd":
+				// 1. 将原有的信息放到表单中
+				//获取他的父节点，然后获取他父亲的兄弟的孩子为input节点
+				var id = $(this).parents("tr").find("input").val();
+				//获取表格中姓名和手机的值
+				var realname = event.target.parentNode.parentNode.children[1].innerText;
+				var telephone = event.target.parentNode.parentNode.children[3].innerText;
+				//将表格中姓名和手机的值添加到表单中
+				$("#realname").val(realname);
+				$("#telephone").val(telephone);
+				 $("input[name=id]").val(id);
+				$('#customer_Modal').modal('show')
+				break;
+		}
+	});
+}
+
+//批量删除功能
+function batch_del(){
+	//为批量删除按钮添加功能
+	$("#btn_batch_del").on("click",function(){
+		//用遍历方法遍历多行数据，获取多个id值
+		var ids = $("input[type = checkbox]:checked").map(function(index,item){
+			return $(item).val();
+		}).toArray();
+		//遍历ids，得到ids=id[0]+id[1]....的字符串
+		var data = "";
+		for(var index in ids){
+			id = ids[index];
+			if(index == 0){
+				data += "ids="+id
+			}else{
+				data += "&ids="+id
+			}
+		}
+		url = baseURL+"/customer/batchDelete";
+		$.post(url,data,function(response){
+			alert(response.message);
+			initData();
+		})
+	});
+}
+//保存按钮功能函数
+function save(){
+	//保存数据
+	$("#customer_Modal #customer_save").on("click", function(event){
+			// 1. 校验有效性
+			// 2. 获取有效值
+			var realname = $("#realname").val();
+			var telephone = $("#telephone").val();
+			var password = $("#password").val();
+			var id = $("input[name=id]").val();
+			// 3. 与后台进行交互
+			var data;
+			if(id){
+				data ="id="+id+"&telephone="+telephone+"&realname="+realname+"&password="+password
+			} else {
+				data = "realname="+realname+"&telephone="+telephone+"&password"+password
+			}
+			var url = "/customer/saveOrUpdate";
+			$.post(baseURL+url,data,function(result){
+				alert(result.message);
+				initData();
+			});
+			event.preventDefault();
+		});
+} 
+// 模态框表单验证
+function keyUp_RegExp(){
+	//判断名字是否合法
+	var na = /[a-zA-Z]{1,}/;
+	//判断手机号是否合法
+	var tele = /\d{9,11}/;        //  \d 等价于【0~9】9位到11位
+	//判断密码是否合法
+	var pa = /\w{8,16}/;
+
+	//判断姓名框中输入的内容是否合法
+	$("#realname").keyup(function(){
+		//获取当前框的对象
+		var c = $(this);
+		var na_err = na.test(c.val());
+		if(na_err){
+			//正确清空错误提示信息
+			$("#name span").addClass("name_err");
+			//显示绿色对号
+			$("#name :nth-child(3)").css("display","block");
+		}else{
+			//错误时，错误信息显示出来
+			$("#name span").removeClass("name_err");
+			//绿色对号被清除掉
+			$("#name :nth-child(3)").css("display","none");
+		}
+	});
+	var a = $("#telephone").keyup(function(){
+		var c = $(this);
+		var tele_err = tele.test(c.val());
+		if(tele_err){
+			//正确清空错误提示信息
+			$("#phone span").addClass("telephone_err");
+			//显示绿色对号
+			$("#phone :nth-child(3)").cass("display","block");
+		}else{
+			//错误时，错误信息显示出来
+			$("#phone span").removeClass("telephone_err");
+			//绿色对号被清除掉
+			$("#phone nth-child(3)").css("display","none");
+		}
+	});
+		$("#password").keyup(function(){
+			var c = $(this);
+			var pa_err = pa.test(c.val());
+			if(pa_err){
+				//正确清空错误提示信息
+				$("#pwd span").addClass("password_err");
+				// 显示绿色对号
+				$("#pwd :nth-child(3)").css("display","block");
+			}else{
+				// 错误时，错误信息显示出来
+				$("#pwd span").removeClass("password_err");
+				// 绿色对号被清除掉
+				$("#pwd :nth-child(3)").css("display","none");
+			}
+	});
+	var na_err = na.test($("#realname").val());
+	var tele_err = tele.test($("#telephone").val());
+	var pa_err = na.text($("#password").val());
+	//三项全部符合返回true
+	if(na_err && tele_err && pa_err){
+		return true;
+	}
+		return false;
+
+}
+
+
+//全局加载函数
+$(function(){
+	// 初始化加载
+	initData();
+	//添加数据
+	add();''
+	//删除数据
+	del();
+	/*//执行鼠标移动背景色改变函数
+	mouse();
+	执行保存按钮功能*/
+	save();
+	//批量删除功能
+	batch_del();
+	//执行添加按钮
+	add();
+	/*//执行模态框隐藏函数
+	cancel();*/
+	keyUp_RegExp();
+	// 设置模态框关闭监听
+	$("#customer_Modal").on('hidden.bs.modal',function(){
+	// 清空模态框数据
+		$(this).find("form")[0].reset();
+		//错误信息清空
+		$("#name span").addClass("name_err");
+		$("#phone span").addClass("telephone_err");
+		$("#pwd span").addClass("password_err");
+		//正确符号清空
+		$("#name .name_true").css("display","none");
+		$("#phone .telephone_true").css("display","none");
+		$("#pwd .password_true").css("display","none");
+	});
+});
+</script>
+
+
+<div class="customer">
+	<!-- 添加、修改信息模态框 -->
+	<div class="modal fade" id="customer_Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
+	  <div id= "modal_Body" class="modal-dialog" role="document">
+	    <div class="modal-content">
+	      <div class="modal-header">
+	        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+	        <h4 class="modal-title" id="exampleModalLabel"></h4>
+	      </div>
+	      <div class="modal-body">
+	        <form>
+	          <div class="form-group row" id="name">
+	            <label for="realname" class="col-sm-2 text-right">姓名:</label>
+	            <div class="col-sm-8">
+	            <input type="text" class="form-control" id="realname">
+	            <span class="name_err" style="color: red;">请输入至少一位字母</span>
+	            </div>
+	            	<div class="name_true">
+	            	<i style="font-size: 26px;color:green;" class="iconfont icon-zhengque1 col-sm-2"></i>
+	            	</div>
+	          </div>
+	          <div class="form-group row" id="phone">
+	            <label for="telephone" class="col-sm-2 text-right">电话:</label>
+	            <div class="col-sm-8">
+	            	<input id="telephone" class="form-control" type="text">
+	            	<span class="telephone_err" style="color: red;">请输入9-11位数字</span>
+	            </div>
+	            	<div class="telephone_true">
+	            	<i style="font-size: 26px;color:green;" class="iconfont icon-zhengque1 col-sm-2"></i>
+	            	</div>
+	          </div>
+	          <div class="form-group row" id="pwd">
+	            <label for="password" class="col-sm-2 text-right">密码:</label>
+	            <div class="col-sm-8">
+	          		<input  id="password" class="form-control" type="password">
+	          		<span class="password_err" style="color: red;">请输入8-18位数字和字母混合密码</span>
+	            </div>
+	            	<div class="password_true">
+	            	<i style="font-size: 26px;color: green;" class="iconfont icon-zhengque1 col-sm-2"></i>
+	            	</div>
+	          </div>
+	        </form>
+	      </div>
+	      <div class="modal-footer">
+	        <button id="cancel" type="button" class="btn btn-default"   data-dismiss="modal">取消</button>
+	        <button id="customer_save" class="btn btn-primary " data-dismiss="modal"type="button">保存</button>
+	      </div>
+	    </div>
+	  </div>
+	</div>
+	<!-- 模态框结束 -->
+
+
+	<div class="btns">
+		<div class="btn btn-info  btn-sm" id="btn_add">添加</div>
+		<div class="btn btn-danger  btn-sm" id="btn_batch_del">批量删除</div>
+	</div>
+	<div class="forms ">
+		<form action="javascript:void(0)">
+			<input type="hidden" name="id">
+		</form>
+	</div>
+	<table class="table table-bordered table-hover text-center " id="customer_tbl">
+		<thead class="thead-dark">
+			<tr>
+				<th width="60px">编号</th>
+				<th width="200px">姓名</th>
+				<th width="100px">头像</th>
+				<th width="150px">手机</th>
+				<th width="100px">操作</th>
+			</tr>
+		</thead>
+		<tbody >
+			
+		</tbody>
+	</table>
+		<!-- /表格 -->
+	<!-- 删除弹框 -->
+	<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+	  <div class="modal-dialog" role="document" style="width: 300px">
+	    <div class="modal-content" >
+	      <div class="modal-header">
+	        <!-- <h7 class="modal-title" id="exampleModalLabel">删除</h7> -->
+	        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+	          <span aria-hidden="true">&times;</span>
+	        </button>
+	      </div>
+	      <div class="modal-body">
+	        是否删除该行内容？
+	      </div>
+	      <div class="modal-footer">
+	      	<button id="Yes" type="button" class="btn btn-danger">是</button>
+	        <button type="button" class="btn btn-secondary" data-dismiss="modal">否</button>
+	      </div>
+	    </div>
+	  </div>
+	</div>
+	<!-- /删除弹框 -->
+
+</div>
+<style>
+
+	.btns{
+		margin-bottom: 1em;
+		/*margin-top: 10px;*/
+	}
+	.btns button {
+		margin-right: 0.5em;
+	}
+	/*留出错误提示所占用的空间*/
+	#name .name_err, 
+	.telephone_err,
+	.password_err{
+		visibility: hidden;
+	}
+	/*隐藏对号提示*/
+	.modal-body .name_true ,
+	.telephone_true,
+	.password_true{
+		display: none;
+	}
+</style>

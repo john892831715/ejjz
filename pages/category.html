@@ -1,0 +1,255 @@
+<!-- <link rel="stylesheet" href="https://at.alicdn.com/t/font_1397734_68oe7isrop5.css">
+<link rel="stylesheet" href="./css/bootstrap.css">
+<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+<script type="text/javascript" src="./js/bootstrap.js"></script> -->
+
+<body>
+<script>
+	var baseURL = "http://47.94.44.23:6677";
+	//查询所有分类信息
+	//初始化数据
+function initData(){
+	var url = "/category/findAll"
+	$.get(baseURL+url,function(response){
+		$("#category_tbl > tbody").empty();
+		response.data.forEach(function(item){
+			var newTr = $(`<tr>
+				<td><input type="checkbox" name = "id" value="`+item.id+`"></td>
+				<td>`+item.name+`</td>
+				<td>`+item.num+`</td>
+				<td>`+item.parentId+`</td>
+				<td>
+					<a class="btn_del" href="javascript:void(0)">删除</a>
+					<a class="btn_upd" href="javascript:void(0)">修改</a>
+				</td>
+			</tr>`);
+			$("#category_tbl > tbody").append(newTr);
+		});
+	});
+}
+//为添加绑定模态框事件处理函数
+function add() {
+	$("#btn_add").click(function(){
+		$('#exampleModal').modal('toggle')
+	})
+}
+
+	
+	
+// 删除/修改功能
+function del() {
+	// 为批量删除绑定事件处理函数
+		// 为批量删除绑定事件处理函数
+	$("#btn_bath_del").click(function(){
+		var ids = 
+		$("input[type=checkbox]:checked")
+		.map(function(index,item){
+			return $(item).val()
+		})
+		.toArray();
+		var url = baseURL+"/category/batchDelete"
+		var data ="";
+		// var ids = [1,2,3]; => ids=1&ids=2&id=3
+		for(var index in ids){
+			var id = ids[index];
+			if(index == 0){
+				data += "ids="+id
+			} else {
+				data += "&ids="+id
+			}
+		}
+
+		// {id:1,name:terry} id=1&name=terry
+		// {ids:[1,2,3]}  ids[]=1&ids[]=2&ids[]=3
+		// {ids:[1,2,3]}  ids[0]=1&ids[1]=2&ids[2]=3
+		// {ids:[1,2,3]}  ids=1&ids=2&ids=3
+		
+		$.post(url,data,function(result){
+			if(result.status ==200){
+				alert("删除成功");
+				initData();
+			} else {
+				alert(result.message);
+			}
+		});
+	})
+		// 为删除/修改按钮绑定事件
+		$("#category_tbl > tbody").on("click","a",function(){
+		switch(this.className){
+			case "btn_del":
+				var url = baseURL+"/category/deleteById";
+				//获取Id
+				var id = $(this).parents("tr").find("input").val();
+				var data = "id="+id;
+				console.log(data);
+				$.get(url,data,function(result){
+					alert(result.message);
+					initData();
+				});
+				break;
+			case "btn_upd":
+				//1、弹出模态框
+					$('#exampleModal').modal('toggle');
+				// 2. 将当前行的信息放人模态框
+				var id = $(this).parents("tr").find("input").val();
+				//获取表格中姓名和手机的值
+				var name = event.target.parentNode.parentNode.children[1].innerText;
+				var num = event.target.parentNode.parentNode.children[2].innerText;
+				var parentId = event.target.parentNode.parentNode.children[3].innerText;
+				//将表格中的名称，数量和类型的值添加到模态框中
+				$("#name").val(name);
+				$("#num").val(num);
+				$("#parentId").val(parentId);
+				break;
+		}
+	});
+}
+//保存功能
+function save(){
+	//保存数据
+	$("#send").on("click", function(event){
+			// 1. 校验有效性
+			// 2. 获取有效值
+			var name = $("#name").val();
+			var num = $("#num").val();
+			var parentId = $("#parentId").val();
+			var id = $("input[name=id]").val();
+			// 3. 与后台进行交互
+			var data;
+			if(id){
+				//id存在则修改数据内容
+				data = "id="+id+"&name="+name+"&num="+num+"&parentId="+parentId;
+			} else {
+				//否则新增数据
+				data = "name="+name+"&num="+num+"&parentId="+parentId;
+			}
+			var url = "/category/saveOrUpdate"
+			$.post(baseURL+url,data,function(result){
+				alert(result.message);
+				initData();
+			});
+			//阻止默认事件
+			event.preventDefault();
+		});
+} 
+
+
+
+
+
+$(function(){
+//查询所有分类信息
+initData();
+//执行添加按钮函数
+add();
+//删除功能
+del();
+//根据Id修改数据并保存
+save();
+//模态框关闭监听事件
+$('#exampleModal').on('hidden.bs.modal', function (e) {
+	$(this).find("form")[0].result();
+
+
+})
+
+})
+</script>
+
+
+
+
+
+<div class="category">
+
+<!-- 按钮组开始 -->
+	<div class="btns ">
+		<button class="btn btn-info  btn-sm" id="btn_add">添加</button>
+		<button class="btn btn-danger btn-sm" id="btn_bath_del">批量删除</button>
+	</div>
+	<!-- 按钮组结束 -->
+
+	<!-- 数据表格开始-->
+	<table class="table table-bordered text-center" id="category_tbl">
+		<!-- 表头开始 -->
+		<thead class="thead-dark">
+			<tr>
+				<th width="100px">编号</th>
+				<th width="300px">分类名称</th>
+				<th width="300px">数量</th>
+				<th>类型</th>
+				<th width="200px">操作</th>
+			</tr>
+		</thead>
+		<!-- 表头结束 -->
+
+		<!-- 表体开始 -->
+		<tbody>
+			
+		</tbody>
+		<!-- 表体开始 -->
+	</table>
+	<!-- 表格结束-->
+	
+</div>
+<!-- 模态框开始 -->
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="exampleModalLabel"></h4>
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="form-group row">
+	          <div class="col-3 text-right">
+	            	<label for="name" class="control-label ">名称：</label>
+	          </div>
+	          <div class="col-9">
+	           		<input type="text" class="form-control" id="name">
+	          </div>
+	          </div>
+          <div class="form-group row">
+		        <div class="col-3 text-right">
+		            <label for="num" class="num">数量：</label>
+		          	
+		        </div>
+		        <div class="col-9">
+		        	<input type="text" class="form-control" id="num">
+		          	
+		        </div>
+          </div>
+          <div class="form-group row">
+          	<div class="col-3 text-right">
+            	<label for="parentId" class="control-label">类型：</label>
+          	
+          	</div>
+          	<div class="col-9">
+           		<input type="text" class="form-control" id="parentId">
+          	
+          </div>
+         </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+        <button type="button" class="btn btn-primary" id="send">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- 模态框结束 -->
+</body>
+
+</html>
+<style>
+	.btns{
+		margin-bottom: 1em;
+		/*margin-top: 10px;*/
+	}
+	.btns button {
+		margin-right: 0.5em;
+	}
+
+</style>
